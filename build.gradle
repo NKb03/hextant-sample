@@ -1,0 +1,20 @@
+plugins {
+    id 'org.jetbrains.kotlin.jvm' version '1.4.10'
+    id 'com.github.nkb03.hextant-plugin' version '0.2-SNAPSHOT'
+}
+
+group 'com.github.nkb03'
+version '1.0-SNAPSHOT'
+
+hextant {
+    pluginId = 'sample'
+}
+
+sourceCompatibility = 11
+
+compileKotlin {
+    kotlinOptions.jvmTarget = "11"
+}
+compileTestKotlin {
+    kotlinOptions.jvmTarget = "11"
+}
