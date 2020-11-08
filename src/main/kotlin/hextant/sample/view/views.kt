@@ -6,19 +6,23 @@ package hextant.sample.view
 
 import bundles.*
 import hextant.codegen.ProvideImplementation
+import hextant.command.line.CommandLine
 import hextant.completion.CompletionStrategy
 import hextant.completion.ConfiguredCompleter
 import hextant.context.ControlFactory
 import hextant.core.view.*
 import hextant.core.view.ListEditorControl.Orientation.Horizontal
 import hextant.core.view.ListEditorControl.Orientation.Vertical
+import hextant.fx.registerShortcuts
 import hextant.fx.view
 import hextant.sample.editor.*
+import hextant.sample.rt.Interpreter
+import hextant.sample.rt.RuntimeContext
 import javafx.scene.control.*
-import reaktive.value.ReactiveString
-import reaktive.value.ReactiveValue
+import reaktive.value.*
 import reaktive.value.binding.map
 import reaktive.value.fx.asObservableValue
+import validated.force
 import validated.reaktive.mapValidated
 
 @ProvideImplementation(ControlFactory::class)
@@ -234,4 +238,13 @@ fun createControl(editor: ProgramEditor, arguments: Bundle) = CompoundEditorCont
     }
     keyword("main:")
     indented { view(editor.main) }
+    view(editor.context[CommandLine])
+    registerShortcuts {
+        on("Ctrl+E") {
+            val result = editor.result.now.force()
+            val interpreter = Interpreter(result.functions)
+            val ctx = RuntimeContext.root()
+            interpreter.execute(result.main, ctx)
+        }
+    }
 }
