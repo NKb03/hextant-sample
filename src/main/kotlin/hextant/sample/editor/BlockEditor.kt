@@ -1,5 +1,6 @@
 package hextant.sample.editor
 
+import bundles.set
 import hextant.codegen.ProvideFeature
 import hextant.codegen.ProvideImplementation
 import hextant.context.*

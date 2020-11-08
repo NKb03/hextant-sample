@@ -4,7 +4,7 @@
 
 package hextant.sample.editor
 
-import bundles.SimpleProperty
+import bundles.*
 import hextant.sample.Identifier
 import hextant.sample.SimpleType
 import reaktive.Observer
@@ -89,7 +89,7 @@ class Scope private constructor(private val parent: Scope?) {
         override fun toString(): String = "$type $name on line ${line.now}"
     }
 
-    companion object : SimpleProperty<Scope>("scope") {
+    companion object : PublicProperty<Scope> by property("scope") {
         fun root() = Scope(parent = null)
     }
 }

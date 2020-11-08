@@ -4,7 +4,7 @@
 
 package hextant.sample.editor
 
-import bundles.SimpleProperty
+import bundles.*
 import hextant.sample.Identifier
 import reaktive.Observer
 import reaktive.map.bindings.get
@@ -42,5 +42,5 @@ class GlobalScope {
             )
         }
 
-    companion object : SimpleProperty<GlobalScope>("global scope")
+    companion object : PublicProperty<GlobalScope> by property("global scope")
 }

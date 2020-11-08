@@ -5,5 +5,9 @@
   "type": "Language",
   "description": "Sample language to demonstrate the features of Hextant",
   "initializer": "hextant.sample.SamplePlugin",
-  "dependencies": []
+  "dependencies": [
+    {
+      "id": "core"
+    }
+  ]
 }

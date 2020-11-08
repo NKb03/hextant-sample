@@ -29,7 +29,7 @@ object ExprExpanderDelegator : ExpanderConfigurator<ExprEditor<*>>({
             name.setText(item.name.toString())
             arguments.resize(item.parameters.size)
             if (item.parameters.isNotEmpty()) runFXWithTimeout {
-                context[EditorControlGroup].getViewOf(arguments.editors.now[0]).receiveFocus()
+                context.get(EditorControlGroup)
             }
         }
     }
