@@ -74,8 +74,8 @@ fun createControl(editor: FunctionCallEditor, arguments: Bundle) = CompoundEdito
         }
         operator("(")
         view(editor.arguments) {
-//            set(ListEditorControl.ORIENTATION, Horizontal)
-//            set(ListEditorControl.CELL_FACTORY) { ListEditorControl.SeparatorCell(", ") }
+            set(ListEditorControl.ORIENTATION, Horizontal)
+            set(ListEditorControl.CELL_FACTORY) { ListEditorControl.SeparatorCell(", ") }
         }
         operator(")")
     }
@@ -137,7 +137,7 @@ fun createControl(editor: AugmentedAssignmentEditor, arguments: Bundle) = Compou
 @ProvideImplementation(ControlFactory::class)
 fun createControl(editor: BlockEditor, arguments: Bundle) = CompoundEditorControl(editor, arguments) {
     view(editor.statements) {
-//        set(ListEditorControl.ORIENTATION, Vertical)
+        set(ListEditorControl.ORIENTATION, Vertical)
     }
 }
 
@@ -218,8 +218,8 @@ fun createControl(editor: FunctionDefinitionEditor, arguments: Bundle) = Compoun
         view(editor.name)
         operator("(")
         view(editor.parameters) {
-//            set(ListEditorControl.CELL_FACTORY) { ListEditorControl.SeparatorCell(",") }
-//            set(ListEditorControl.ORIENTATION, Horizontal)
+            set(ListEditorControl.CELL_FACTORY) { ListEditorControl.SeparatorCell(",") }
+            set(ListEditorControl.ORIENTATION, Horizontal)
         }
         operator(")")
     }
@@ -229,8 +229,8 @@ fun createControl(editor: FunctionDefinitionEditor, arguments: Bundle) = Compoun
 @ProvideImplementation(ControlFactory::class)
 fun createControl(editor: ProgramEditor, arguments: Bundle) = CompoundEditorControl(editor, arguments) {
     view(editor.functions) {
-//        set(ListEditorControl.ORIENTATION, Vertical)
-//        set(ListEditorControl.EMPTY_DISPLAY) { Button("Add function") }
+        set(ListEditorControl.ORIENTATION, Vertical)
+        set(ListEditorControl.EMPTY_DISPLAY) { Button("Add function") }
     }
     keyword("main:")
     indented { view(editor.main) }
