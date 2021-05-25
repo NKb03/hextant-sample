@@ -4,18 +4,23 @@
 
 package hextant.sample.editor
 
-import bundles.*
+import bundles.PublicProperty
+import bundles.property
 import hextant.sample.Identifier
 import hextant.sample.SimpleType
 import reaktive.Observer
 import reaktive.collection.binding.find
 import reaktive.dependencies
-import reaktive.set.*
-import reaktive.value.*
-import reaktive.value.binding.*
-import validated.*
-import validated.Validated.Valid
-import validated.reaktive.ReactiveValidated
+import reaktive.set.MutableReactiveSet
+import reaktive.set.reactiveSet
+import reaktive.set.withDependencies
+import reaktive.value.ReactiveInt
+import reaktive.value.ReactiveValue
+import reaktive.value.binding.flatMap
+import reaktive.value.binding.map
+import reaktive.value.binding.orElse
+import reaktive.value.now
+import reaktive.value.reactiveValue
 
 class Scope private constructor(private val parent: Scope?) {
     private val definitions = mutableMapOf<Identifier, MutableReactiveSet<Def>>()
@@ -23,23 +28,23 @@ class Scope private constructor(private val parent: Scope?) {
     private fun definitions(name: Identifier) =
         definitions.getOrPut(name) { reactiveSet() }
 
-    fun resolve(name: ReactiveValidated<Identifier>, line: ReactiveInt): ReactiveValue<SimpleType?> {
+    fun resolve(name: ReactiveValue<Identifier?>, line: ReactiveInt): ReactiveValue<SimpleType?> {
         val t = name.flatMap { r ->
-            r.map { n ->
+            r?.let { n ->
                 definitions(n)
                     .withDependencies { dependencies(it.line, line) }
                     .find { it.line.now < line.now }
                     .map { it?.type }
-            }.ifInvalid { reactiveValue(null) }
+            } ?: reactiveValue(null)
         }
         return if (parent == null) t
         else t.orElse(parent.resolve(name, line))
     }
 
     fun addDefinition(
-        name: ReactiveValidated<Identifier>,
+        name: ReactiveValue<Identifier?>,
         line: ReactiveInt,
-        type: ReactiveValidated<SimpleType>
+        type: ReactiveValue<SimpleType?>
     ): Observer {
         addDefinition(name.now, type.now, line)
         return name.observe { _, old, new ->
@@ -54,17 +59,17 @@ class Scope private constructor(private val parent: Scope?) {
     fun availableBindings(line: Int): List<Def> =
         definitions.values.flatMap { it.now }.filter { it.line.now < line } + parent?.availableBindings(line).orEmpty()
 
-    fun removeDefinition(name: Validated<Identifier>, type: Validated<SimpleType>, line: ReactiveInt) {
-        if (name is Valid && type is Valid) {
-            val def = Def(name.value, type.value, line)
-            val removed = definitions(name.value).now.remove(def)
-            check(removed) { "Could not remove $def because only ${definitions(name.value).now} exist" }
+    fun removeDefinition(name: Identifier?, type: SimpleType?, line: ReactiveInt) {
+        if (name != null && type != null) {
+            val def = Def(name, type, line)
+            val removed = definitions(name).now.remove(def)
+            check(removed) { "Could not remove $def because only ${definitions(name).now} exist" }
         }
     }
 
-    private fun addDefinition(name: Validated<Identifier>, type: Validated<SimpleType>, line: ReactiveInt) {
-        if (name is Valid && type is Valid) {
-            definitions(name.value).now.add(Def(name.value, type.value, line))
+    private fun addDefinition(name: Identifier?, type: SimpleType?, line: ReactiveInt) {
+        if (name != null && type != null) {
+            definitions(name).now.add(Def(name, type, line))
         }
     }
 

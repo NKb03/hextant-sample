@@ -21,7 +21,7 @@ class RuntimeContext private constructor(private val parent: RuntimeContext?) {
         while (true) {
             if (name in ctx.variables) {
                 ctx.variables[name] = value
-                break
+                return
             } else ctx = ctx.parent ?: break
         }
         error("Variable not defined: '$name'")

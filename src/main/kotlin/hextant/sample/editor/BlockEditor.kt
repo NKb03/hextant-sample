@@ -3,19 +3,20 @@ package hextant.sample.editor
 import bundles.set
 import hextant.codegen.ProvideFeature
 import hextant.codegen.ProvideImplementation
-import hextant.context.*
+import hextant.context.Context
+import hextant.context.EditorFactory
+import hextant.context.extend
 import hextant.core.editor.CompoundEditor
 import hextant.sample.Block
 import hextant.sample.Statement
 import reaktive.Observer
 import reaktive.list.observeEach
+import reaktive.value.ReactiveValue
 import reaktive.value.now
-import validated.reaktive.ReactiveValidated
-import validated.reaktive.composeReactive
 
 @ProvideFeature
 class BlockEditor @ProvideImplementation(EditorFactory::class) constructor(context: Context) :
-    CompoundEditor<Block>(context), StatementEditor<Block> {
+    CompoundEditor<Block?>(context), StatementEditor<Block> {
     private val scope = context[Scope].child()
 
     val statements by child(StatementListEditor(context.extend { set(Scope, scope) }))
@@ -48,5 +49,5 @@ class BlockEditor @ProvideImplementation(EditorFactory::class) constructor(conte
         }
     }
 
-    override val result: ReactiveValidated<Block> = composeReactive(statements.result, ::Block)
+    override val result: ReactiveValue<Block?> = composeResult { Block(statements.get()) }
 }

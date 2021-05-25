@@ -4,12 +4,13 @@
 
 package hextant.sample.view
 
-import bundles.*
+import bundles.Bundle
+import bundles.set
 import hextant.codegen.ProvideImplementation
-import hextant.command.line.CommandLine
 import hextant.completion.CompletionStrategy
 import hextant.completion.ConfiguredCompleter
 import hextant.context.ControlFactory
+import hextant.context.Properties
 import hextant.core.view.*
 import hextant.core.view.ListEditorControl.Orientation.Horizontal
 import hextant.core.view.ListEditorControl.Orientation.Vertical
@@ -18,12 +19,14 @@ import hextant.fx.view
 import hextant.sample.editor.*
 import hextant.sample.rt.Interpreter
 import hextant.sample.rt.RuntimeContext
-import javafx.scene.control.*
-import reaktive.value.*
+import javafx.scene.control.Button
+import javafx.scene.control.Control
+import javafx.scene.control.Tooltip
+import reaktive.value.ReactiveString
+import reaktive.value.ReactiveValue
 import reaktive.value.binding.map
 import reaktive.value.fx.asObservableValue
-import validated.force
-import validated.reaktive.mapValidated
+import reaktive.value.now
 
 @ProvideImplementation(ControlFactory::class)
 fun createControl(editor: IdentifierEditor, arguments: Bundle) =
@@ -32,7 +35,7 @@ fun createControl(editor: IdentifierEditor, arguments: Bundle) =
 @ProvideImplementation(ControlFactory::class)
 fun createControl(editor: ReferenceEditor, arguments: Bundle) =
     TokenEditorControl(editor, arguments, styleClass = "reference").apply {
-        val id = editor.result.mapValidated { it.name }
+        val id = editor.result.map { it?.name }
         val type = editor.context[Scope].resolve(id, editor.line)
         attachInfoTooltip(type.orUnresolved())
     }
@@ -238,10 +241,10 @@ fun createControl(editor: ProgramEditor, arguments: Bundle) = CompoundEditorCont
     }
     keyword("main:")
     indented { view(editor.main) }
-    view(editor.context[CommandLine])
+    view(editor.context[Properties.localCommandLine])
     registerShortcuts {
         on("Ctrl+E") {
-            val result = editor.result.now.force()
+            val result = editor.result.now!!
             val interpreter = Interpreter(result.functions)
             val ctx = RuntimeContext.root()
             interpreter.execute(result.main, ctx)

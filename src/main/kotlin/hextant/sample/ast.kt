@@ -7,55 +7,52 @@ package hextant.sample
 import hextant.codegen.*
 import hextant.core.editor.TokenType
 import hextant.sample.editor.*
-import validated.*
 
 @Token
 data class Identifier(private val str: String) {
     override fun toString(): String = str
 
-    companion object : TokenType<Identifier> {
-        override fun compile(token: String): Validated<Identifier> = token
+    companion object : TokenType<Identifier?> {
+        override fun compile(token: String): Identifier? = token
             .takeIf { it.none { c -> c.isWhitespace() } }
-            .validated { invalid("Invalid identifier '$token'") }
-            .map(::Identifier)
+            ?.let(::Identifier)
     }
 }
 
-@Alternative
-@Expandable(ExprExpanderDelegator::class, subtypeOf = Expr::class)
+@Alternative(nullableResult = true)
+@Expandable(ExprExpanderDelegator::class, nodeType = Expr::class)
 @EditableList
 sealed class Expr
 
-@Token(subtypeOf = Expr::class)
+@Token(nodeType = Expr::class)
 data class Reference(val name: Identifier) : Expr() {
     override fun toString(): String = "$name"
 
-    companion object : TokenType<Reference> {
-        override fun compile(token: String): Validated<Reference> = Identifier.compile(token).map(::Reference)
+    companion object : TokenType<Reference?> {
+        override fun compile(token: String): Reference? = Identifier.compile(token)?.let(::Reference)
     }
 }
 
-@Token(subtypeOf = Expr::class)
+@Token(nodeType = Expr::class)
 data class IntLiteral(val value: Int) : Expr() {
     override fun toString(): String = "$value"
 
-    companion object : TokenType<IntLiteral> {
-        override fun compile(token: String): Validated<IntLiteral> = token
+    companion object : TokenType<IntLiteral?> {
+        override fun compile(token: String): IntLiteral? = token
             .toIntOrNull()
-            .validated { invalid("Invalid integer literal '$token'") }
-            .map(::IntLiteral)
+            ?.let(::IntLiteral)
     }
 }
 
-@Token(subtypeOf = Expr::class)
+@Token(nodeType = Expr::class)
 data class BooleanLiteral(val value: Boolean) : Expr() {
     override fun toString(): String = "$value"
 
-    companion object : TokenType<BooleanLiteral> {
-        override fun compile(token: String): Validated<BooleanLiteral> = when (token) {
-            "false" -> valid(BooleanLiteral(false))
-            "true" -> valid(BooleanLiteral(true))
-            else    -> invalid("Invalid boolean literal '$token'")
+    companion object : TokenType<BooleanLiteral?> {
+        override fun compile(token: String): BooleanLiteral? = when (token) {
+            "false" -> BooleanLiteral(false)
+            "true" -> BooleanLiteral(true)
+            else -> null
         }
     }
 }
@@ -100,56 +97,58 @@ enum class BinaryOperator(private val str: String) {
     },
     Xor("^^") {
         override fun apply(lhs: Any, rhs: Any): Any = lhs as Boolean xor rhs as Boolean
+    },
+    Unknown("unknown") {
+        override fun apply(lhs: Any, rhs: Any): Any = error("unknown operator")
     };
 
     abstract fun apply(lhs: Any, rhs: Any): Any
 
     override fun toString(): String = str
 
-    companion object : TokenType<BinaryOperator> {
+    companion object : TokenType<BinaryOperator?> {
         private val byToken = values().associateBy { it.str }
 
-        override fun compile(token: String): Validated<BinaryOperator> =
-            byToken[token].validated { invalid("No such binary operator '$token'") }
+        override fun compile(token: String): BinaryOperator? = byToken[token] ?: Unknown
     }
 }
 
-@Compound(subtypeOf = Expr::class)
+@Compound(nodeType = Expr::class)
 data class BinaryExpr(val lhs: Expr, val operator: BinaryOperator, val rhs: Expr) : Expr() {
     override fun toString(): String = "$lhs $operator $rhs"
 }
 
-@Compound(subtypeOf = Expr::class)
+@Compound(nodeType = Expr::class)
 data class FunctionCall(val name: Identifier, val arguments: List<Expr>) : Expr() {
     override fun toString(): String = "$name(${arguments.joinToString(", ")})"
 }
 
-@Alternative
-@Expandable(StatementExpanderDelegator::class, subtypeOf = Statement::class)
+@Alternative(nullableResult = true)
+@Expandable(StatementExpanderDelegator::class, nodeType = Statement::class)
 @EditableList
 sealed class Statement
 
-@Compound(subtypeOf = Statement::class)
+@Compound(nodeType = Statement::class)
 data class PrintStatement(val expr: Expr) : Statement() {
     override fun toString(): String = "print $expr"
 }
 
-@Compound(subtypeOf = Statement::class)
+@Compound(nodeType = Statement::class)
 data class ExprStatement(val expr: Expr) : Statement() {
     override fun toString(): String = "$expr"
 }
 
-@Compound(subtypeOf = Statement::class)
+@Compound(nodeType = Statement::class)
 data class Definition(val type: SimpleType, val name: Identifier, val value: Expr) : Statement() {
     override fun toString(): String = "let $name = $value"
 }
 
-@Compound(subtypeOf = Statement::class)
+@Compound(nodeType = Statement::class)
 data class Assignment(val name: Identifier, val value: Expr) : Statement() {
     override fun toString(): String = "$name = $value"
 }
 
-@Compound(subtypeOf = Statement::class)
+@Compound(nodeType = Statement::class)
 data class AugmentedAssignment(val name: Identifier, val operator: BinaryOperator, val value: Expr) : Statement() {
     override fun toString(): String = "$name $operator= $value"
 }
@@ -163,7 +162,7 @@ data class Block(val statements: List<Statement>) : Statement() {
     }
 }
 
-@Token(subtypeOf = Statement::class)
+@Token(nodeType = Statement::class)
 data class ControlFlowStatement(val type: Type) : Statement() {
     enum class Type(private val str: String) {
         Break("break"), Continue("continue");
@@ -171,21 +170,19 @@ data class ControlFlowStatement(val type: Type) : Statement() {
         override fun toString(): String = str
     }
 
-    companion object : TokenType<ControlFlowStatement> {
+    companion object : TokenType<ControlFlowStatement?> {
         private val byToken = Type.values().associateBy { it.toString() }
 
-        override fun compile(token: String): Validated<ControlFlowStatement> = byToken[token]
-            .validated { invalid("No such binary operator '$token'") }
-            .map(::ControlFlowStatement)
+        override fun compile(token: String): ControlFlowStatement? = byToken[token]?.let(::ControlFlowStatement)
     }
 }
 
-@Compound(subtypeOf = Statement::class)
+@Compound(nodeType = Statement::class)
 data class ReturnStatement(val expr: Expr) : Statement() {
     override fun toString(): String = "return $expr"
 }
 
-@Compound(subtypeOf = Statement::class)
+@Compound(nodeType = Statement::class)
 data class IfStatement(
     val condition: Expr,
     val consequence: Block
@@ -193,7 +190,7 @@ data class IfStatement(
     override fun toString(): String = "if $condition then $consequence"
 }
 
-@Compound(subtypeOf = Statement::class)
+@Compound(nodeType = Statement::class)
 data class WhileLoop(
     val condition: Expr,
     val body: Block
@@ -217,11 +214,10 @@ enum class SimpleType(private val str: String) {
 
     override fun toString(): String = str
 
-    companion object : TokenType<SimpleType> {
+    companion object : TokenType<SimpleType?> {
         private val byToken = values().associateBy { it.str }
 
-        override fun compile(token: String): Validated<SimpleType> =
-            byToken[token].validated { invalid("No such type '$token'") }
+        override fun compile(token: String): SimpleType? = byToken[token]
     }
 }
 

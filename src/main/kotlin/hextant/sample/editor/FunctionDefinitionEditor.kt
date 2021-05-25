@@ -9,16 +9,13 @@ import hextant.core.editor.CompoundEditor
 import hextant.sample.FunctionDefinition
 import reaktive.Observer
 import reaktive.list.observeEach
+import reaktive.value.ReactiveValue
 import reaktive.value.now
 import reaktive.value.reactiveValue
-import validated.ifInvalid
-import validated.map
-import validated.reaktive.ReactiveValidated
-import validated.reaktive.composeReactive
 
 @ProvideFeature
 class FunctionDefinitionEditor @ProvideImplementation(EditorFactory::class) constructor(context: Context) :
-    CompoundEditor<FunctionDefinition>(context) {
+    CompoundEditor<FunctionDefinition?>(context) {
     val returnType by child(SimpleTypeEditor(context))
     val name by child(IdentifierEditor(context))
     val parameters by child(ParameterListEditor(context))
@@ -49,9 +46,8 @@ class FunctionDefinitionEditor @ProvideImplementation(EditorFactory::class) cons
         parameters.editors.now.joinTo(this, separator = ", ", prefix = "(", postfix = ")") { e -> displayResult(e) }
     }
 
-    private fun displayResult(subEditor: Editor<*>) =
-        subEditor.result.now.map { it.toString() }.ifInvalid { "<invalid>" }
+    private fun displayResult(subEditor: Editor<*>) = subEditor.result.now?.toString() ?: "<invalid>"
 
-    override val result: ReactiveValidated<FunctionDefinition> =
-        composeReactive(returnType.result, name.result, parameters.result, body.result, ::FunctionDefinition)
+    override val result: ReactiveValue<FunctionDefinition?> =
+        composeResult { FunctionDefinition(returnType.get(), name.get(), parameters.get(), body.get()) }
 }

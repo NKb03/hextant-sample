@@ -5,10 +5,9 @@ import hextant.core.editor.CompoundEditor
 import hextant.sample.Program
 import reaktive.Observer
 import reaktive.list.observeEach
-import validated.reaktive.ReactiveValidated
-import validated.reaktive.composeReactive
+import reaktive.value.ReactiveValue
 
-class ProgramEditor(context: Context) : CompoundEditor<Program>(context) {
+class ProgramEditor(context: Context) : CompoundEditor<Program?>(context) {
     val functions by child(FunctionDefinitionListEditor(context))
     val main by child(BlockEditor(context))
 
@@ -22,5 +21,7 @@ class ProgramEditor(context: Context) : CompoundEditor<Program>(context) {
         }
     }
 
-    override val result: ReactiveValidated<Program> = composeReactive(functions.result, main.result, ::Program)
+    override val result: ReactiveValue<Program?> = composeResult {
+        Program(functions.get(), main.get())
+    }
 }

@@ -5,6 +5,7 @@
 package hextant.sample.editor
 
 import hextant.context.*
+import hextant.core.Editor
 import hextant.core.editor.ExpanderConfigurator
 import hextant.fx.runFXWithTimeout
 import hextant.sample.*
